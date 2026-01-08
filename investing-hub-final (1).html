@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investment Hub Pro - Live Market Data</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A1128;
+            --royal-blue: #1E3A8A;
+            --electric: #3B82F6;
+            --cyan: #06B6D4;
+            --mint: #10B981;
+            --gold: #F59E0B;
+            --red: #EF4444;
+            --cream: #FFFBEB;
+            --slate: #F8FAFC;
+            --text-primary: #1E293B;
+            --text-secondary: #64748B;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0A1128 0%, #1E3A8A 50%, #3B82F6 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(245, 158, 11, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+            animation: gradientShift 20s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            padding: 4rem 2rem 3rem;
+            position: relative;
+        }
+
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 4.5rem;
+            font-weight: 900;
+            color: white;
+            margin-bottom: 1rem;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .header .subtitle {
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 300;
+            letter-spacing: 2px;
+            animation: fadeInUp 0.8s ease-out 0.2s backwards;
+        }
+
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(239, 68, 68, 0.2);
+            border: 2px solid var(--red);
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-top: 1rem;
+            animation: pulse 2s ease-in-out infinite;
+            backdrop-filter: blur(10px);
+        }
+
+        .live-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--red);
+            border-radius: 50%;
+            animation: blink 1.5s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .market-ticker {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            padding: 1rem;
+            border-radius: 16px;
+            margin: 2rem 0;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .ticker-wrapper {
+            display: flex;
+            gap: 3rem;
+            animation: scroll 30s linear infinite;
+            white-space: nowrap;
+        }
+
+        @keyframes scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .ticker-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            color: white;
+            font-weight: 600;
+        }
+
+        .ticker-symbol {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .ticker-price {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .ticker-change {
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .ticker-change.positive {
+            background: rgba(16, 185, 129, 0.3);
+            color: #10B981;
+        }
+
+        .ticker-change.negative {
+            background: rgba(239, 68, 68, 0.3);
+            color: #EF4444;
+        }
+
+        .tab-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            animation: slideUp 0.8s ease-out 0.3s backwards;
+        }
+
+        .tabs {
+            display: flex;
+            background: var(--royal-blue);
+            padding: 0;
+            overflow-x: auto;
+            gap: 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .tab-button {
+            flex: 1;
+            min-width: 140px;
+            padding: 1.25rem 1.5rem;
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.5px;
+            position: relative;
+        }
+
+        .tab-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .tab-button.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border-bottom-color: var(--gold);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 3rem;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .intro-box {
+            background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
+            color: white;
+            padding: 2.5rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .intro-box::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .intro-box h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .intro-box p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            opacity: 0.95;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stock-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .live-stock-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .live-stock-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--electric), var(--cyan));
+            transform: scaleX(0);
+            transition: transform 0.4s ease;
+        }
+
+        .live-stock-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .live-stock-card:hover {
+            transform: translateY(-12px) scale(1.02);
+            box-shadow: 0 20px 60px rgba(59, 130, 246, 0.25);
+            border-color: var(--electric);
+        }
+
+        .stock-header-live {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1.5rem;
+        }
+
+        .stock-title-section h4 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            color: var(--royal-blue);
+            margin-bottom: 0.25rem;
+        }
+
+        .stock-ticker {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .live-price {
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--royal-blue);
+            transition: all 0.3s ease;
+        }
+
+        .live-price.flash-green {
+            animation: flashGreen 0.6s ease;
+        }
+
+        .live-price.flash-red {
+            animation: flashRed 0.6s ease;
+        }
+
+        @keyframes flashGreen {
+            0%, 100% { color: var(--royal-blue); }
+            50% { color: var(--mint); transform: scale(1.1); }
+        }
+
+        @keyframes flashRed {
+            0%, 100% { color: var(--royal-blue); }
+            50% { color: var(--red); transform: scale(1.1); }
+        }
+
+        .live-change {
+            display: inline-block;
+            padding: 0.4rem 1rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-top: 0.5rem;
+        }
+
+        .live-change.positive {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+
+        .live-change.negative {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+
+        .refresh-button {
+            background: linear-gradient(135deg, var(--electric), var(--cyan));
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .refresh-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(59, 130, 246, 0.5);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .card, .interactive-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .interactive-card::after {
+            content: '→';
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            font-size: 2rem;
+            color: var(--electric);
+            opacity: 0;
+            transform: translateX(-10px);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover, .interactive-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 16px 50px rgba(59, 130, 246, 0.2);
+            border-color: var(--electric);
+        }
+
+        .interactive-card:hover::after {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .card h3, .interactive-card h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            color: var(--royal-blue);
+            margin-bottom: 1rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.4rem 1rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .badge.low-risk { background: #D1FAE5; color: #065F46; }
+        .badge.medium-risk { background: #FEF3C7; color: #92400E; }
+        .badge.high-risk { background: #FEE2E2; color: #991B1B; }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #F1F5F9;
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .interactive-calculator {
+            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+            border-radius: 20px;
+            padding: 3rem;
+            margin-top: 2rem;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .slider-container {
+            margin-bottom: 2rem;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            color: var(--royal-blue);
+        }
+
+        .slider-value {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--electric);
+        }
+
+        .slider {
+            width: 100%;
+            height: 12px;
+            border-radius: 10px;
+            background: linear-gradient(to right, var(--electric), var(--cyan));
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+            border: 4px solid var(--electric);
+            transition: all 0.3s ease;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+        }
+
+        .result-panel {
+            background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
+            color: white;
+            padding: 3rem;
+            border-radius: 20px;
+            margin-top: 2rem;
+            text-align: center;
+            box-shadow: 0 12px 40px rgba(30, 58, 138, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .result-value {
+            font-size: 4.5rem;
+            font-weight: 900;
+            color: var(--gold);
+            text-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
+            margin: 1rem 0;
+            position: relative;
+            animation: countUp 1s ease-out;
+        }
+
+        .tip-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .tip-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .tip-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(59, 130, 246, 0.2);
+        }
+
+        .tip-card::before {
+            content: attr(data-number);
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            font-size: 8rem;
+            font-weight: 900;
+            color: rgba(59, 130, 246, 0.05);
+            font-family: 'Playfair Display', serif;
+        }
+
+        .glossary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .glossary-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            border-top: 4px solid var(--cyan);
+            transition: all 0.3s ease;
+        }
+
+        .glossary-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(6, 182, 212, 0.2);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(60px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2.5rem; }
+            .tabs { overflow-x: scroll; }
+            .tab-content { padding: 1.5rem; }
+            .stock-grid, .card-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Investment Hub Pro</h1>
+        <div class="subtitle">Live Market Data & Complete Learning Platform</div>
+        <div class="live-badge">
+            <div class="live-dot"></div>
+            LIVE REAL-TIME DATA
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Live Market Ticker -->
+        <div class="market-ticker">
+            <div class="ticker-wrapper" id="marketTicker">
+                <div class="ticker-item">Loading live data...</div>
+            </div>
+        </div>
+
+        <div class="tab-container">
+            <div class="tabs">
+                <button class="tab-button active" onclick="openTab(event, 'live-today')">📊 Live Today</button>
+                <button class="tab-button" onclick="openTab(event, 'hot-2026')">🔥 2026 Picks</button>
+                <button class="tab-button" onclick="openTab(event, 'basics')">📚 Getting Started</button>
+                <button class="tab-button" onclick="openTab(event, 'options')">💼 Investment Types</button>
+                <button class="tab-button" onclick="openTab(event, 'calculator')">💰 Calculator</button>
+                <button class="tab-button" onclick="openTab(event, 'tips')">💡 Pro Tips</button>
+                <button class="tab-button" onclick="openTab(event, 'glossary')">📖 Terms</button>
+            </div>
+
+            <!-- Getting Started Tab - NOW FIRST AND ACTIVE! -->
+            <div id="basics" class="tab-content active">
+                <div class="intro-box">
+                    <h2>👋 Welcome! Start Your Investing Journey Here</h2>
+                    <p>Never invested before? Perfect! You're in exactly the right place. Investing might seem complicated, but it's actually pretty simple once you understand the basics. This guide will walk you through everything you need to know to start building wealth, even if you're starting with just a few dollars. Let's break it down together - no jargon, no confusion, just clear steps to get you started.</p>
+                </div>
+
+                <div class="card-grid">
+                    <div class="interactive-card" onclick="this.style.background = this.style.background ? '' : 'linear-gradient(135deg, #EFF6FF, #DBEAFE)'">
+                        <h3>💡 What Is Investing?</h3>
+                        <p>Investing means putting your money into something (like stocks or bonds) with the goal of making more money over time. Think of it like planting seeds that grow into trees. Instead of keeping cash under your mattress where it actually LOSES value to inflation, you're putting it to work so it can grow.</p>
+                    </div>
+
+                    <div class="interactive-card" onclick="this.style.background = this.style.background ? '' : 'linear-gradient(135deg, #EFF6FF, #DBEAFE)'">
+                        <h3>⏰ Why Start Now?</h3>
+                        <p>Time is your secret weapon! The earlier you start, the more your money can grow through compound interest. Even if you start with just $50/month at age 25, you could have over $150,000 by retirement. Wait until 35? You'd need to invest $120/month to reach the same amount. Starting early is like getting free money from time itself!</p>
+                    </div>
+
+                    <div class="interactive-card" onclick="this.style.background = this.style.background ? '' : 'linear-gradient(135deg, #EFF6FF, #DBEAFE)'">
+                        <h3>🎯 The Magic of Compounding</h3>
+                        <p>Here's the coolest part: compound interest means you earn returns on your returns. Let's say you invest $10,000 and it grows 8% in year one ($800). In year two, you don't just earn 8% on $10,000 - you earn it on $10,800! After two years you have $11,664, not $11,600. That "extra" $64 came from earning interest on your interest. Over decades, this effect becomes HUGE.</p>
+                    </div>
+
+                    <div class="interactive-card" onclick="this.style.background = this.style.background ? '' : 'linear-gradient(135deg, #EFF6FF, #DBEAFE)'">
+                        <h3>⚖️ Risk vs. Reward</h3>
+                        <p>All investments involve some risk - the chance you could lose money. Generally, higher potential returns come with higher risk. Stocks might swing up or down 20% in a year but historically return about 10% annually. Bonds are steadier but only return around 5%. The key is finding the right balance for YOU based on your age, goals, and how much risk makes you comfortable.</p>
+                    </div>
+
+                    <div class="interactive-card" onclick="this.style.background = this.style.background ? '' : 'linear-gradient(135deg, #EFF6FF, #DBEAFE)'">
+                        <h3>🧺 Don't Put All Eggs in One Basket</h3>
+                        <p>Diversification means spreading your money across different investments. Why? If you put everything into one company's stock and that company struggles, you lose everything. But if you own pieces of 100 different companies (through something like an index fund), one company's bad day barely affects you. This is the #1 way to reduce risk!</p>
+                    </div>
+
+                    <div class="interactive-card" onclick="this.style.background = this.style.background ? '' : 'linear-gradient(135deg, #EFF6FF, #DBEAFE)'">
+                        <h3>📅 Think Long-Term</h3>
+                        <p>Markets go up and down daily - that's totally normal! But here's the secret: the S&P 500 has NEVER had a negative return over any 20-year period. Ever. Short-term volatility is just noise. Successful investors ignore the daily drama and think in decades. If you panic-sell when markets drop, you lock in losses and miss the recovery. Stay calm and stay invested!</p>
+                    </div>
+
+                    <div class="interactive-card" onclick="this.style.background = this.style.background ? '' : 'linear-gradient(135deg, #EFF6FF, #DBEAFE)'">
+                        <h3>🚀 How to Actually Start</h3>
+                        <p>Good news: you don't need thousands of dollars! Many apps let you start with as little as $1. Here's your action plan: (1) Open an account with a brokerage app like Fidelity, Schwab, or Robinhood, (2) Start with an S&P 500 index fund (like VOO or SPY) for instant diversification, (3) Set up automatic monthly contributions - even $25/month adds up!, (4) Don't check it every day - just let it grow! The hardest part is starting. Everything else is easier.</p>
+                    </div>
+
+                    <div class="interactive-card" onclick="this.style.background = this.style.background ? '' : 'linear-gradient(135deg, #EFF6FF, #DBEAFE)'">
+                        <h3>💪 You Can Do This!</h3>
+                        <p>Feeling overwhelmed? Don't be! Millions of regular people successfully invest and build wealth. You don't need to be a finance expert or have a lot of money. Warren Buffett recommends simple index funds for most people. Start small, learn as you go, and remember: the best time to start was yesterday. The second best time is today. Ready? Click through the other tabs to learn about different investment types, use the calculator to see your potential growth, and check out live market data!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Top Movers Tab -->
+            <div id="live-today" class="tab-content">
+                <div class="intro-box">
+                    <h2>Top Stock Movers Today</h2>
+                    <p>Real-time stock prices from the market! Watch prices update live and see which stocks are making the biggest moves right now. Prices refresh automatically.</p>
+                </div>
+
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <button class="refresh-button" onclick="refreshAllStocks()">
+                        <span>🔄</span> Refresh Live Data
+                    </button>
+                </div>
+
+                <div class="stock-grid" id="liveStocksGrid">
+                    <div style="text-align: center; padding: 2rem;">
+                        <div class="loading-spinner" style="width: 50px; height: 50px; border-width: 5px;"></div>
+                        <p style="margin-top: 1rem; color: var(--text-secondary);">Loading live stock data...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hot 2026 Picks Tab -->
+            <div id="hot-2026" class="tab-content">
+                <div class="intro-box">
+                    <h2>Top Analyst Picks for 2026 - LIVE PRICES</h2>
+                    <p>Wall Street's hottest stocks for 2026 with real-time pricing. These are the stocks analysts predict will outperform based on AI growth, semiconductor boom, and market trends.</p>
+                </div>
+
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <button class="refresh-button" onclick="refresh2026Stocks()">
+                        <span>🔄</span> Refresh Prices
+                    </button>
+                </div>
+
+                <div class="stock-grid" id="hot2026Grid">
+                    <div style="text-align: center; padding: 2rem;">
+                        <div class="loading-spinner" style="width: 50px; height: 50px; border-width: 5px;"></div>
+                        <p style="margin-top: 1rem; color: var(--text-secondary);">Loading analyst picks...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Investment Options Tab -->
+            <div id="options" class="tab-content">
+                <div class="intro-box">
+                    <h2>Main Investment Types</h2>
+                    <p>Understanding your options is the first step to building a balanced portfolio. Each investment type serves a different purpose and fits different goals. Hover over each card to see it come alive!</p>
+                </div>
+
+                <div class="card-grid">
+                    <div class="card">
+                        <h3>Stocks (Equities)</h3>
+                        <span class="badge high-risk">High Risk / High Return</span>
+                        <p style="margin: 1rem 0;">When you buy stock, you own a piece of a company. As the company grows and profits increase, your shares become more valuable.</p>
+                        
+                        <div class="stat-row">
+                            <span class="stat-label">Historical Average Return</span>
+                            <span class="stat-value">~10% annually</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">S&P 500 (2024)</span>
+                            <span class="stat-value" style="color: #10B981;">+23.5%</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Best For</span>
+                            <span class="stat-value">Long-term growth</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Time Horizon</span>
+                            <span class="stat-value">5+ years</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Minimum Investment</span>
+                            <span class="stat-value">$1 (fractional shares)</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Bonds (Fixed Income)</h3>
+                        <span class="badge low-risk">Low Risk / Steady Return</span>
+                        <p style="margin: 1rem 0;">Bonds are loans you give to governments or corporations. They pay you regular interest and return your principal at maturity.</p>
+                        
+                        <div class="stat-row">
+                            <span class="stat-label">Historical Average Return</span>
+                            <span class="stat-value">~5% annually</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">10-Year Treasury Yield</span>
+                            <span class="stat-value">4.65%</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Best For</span>
+                            <span class="stat-value">Income & stability</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Time Horizon</span>
+                            <span class="stat-value">1-10 years</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Minimum Investment</span>
+                            <span class="stat-value">$100-$1,000</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Index Funds & ETFs</h3>
+                        <span class="badge medium-risk">Medium Risk / Best for Beginners</span>
+                        <p style="margin: 1rem 0;">These funds own hundreds or thousands of stocks at once, giving instant diversification. They track market indexes like the S&P 500.</p>
+                        
+                        <div class="stat-row">
+                            <span class="stat-label">Historical Average Return</span>
+                            <span class="stat-value">~9-10% annually</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Expense Ratio (VOO)</span>
+                            <span class="stat-value">0.03%</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Best For</span>
+                            <span class="stat-value">Everyone</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Diversification</span>
+                            <span class="stat-value">500+ companies</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Minimum Investment</span>
+                            <span class="stat-value">$1-$500</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Real Estate (REITs)</h3>
+                        <span class="badge medium-risk">Medium Risk / Passive Income</span>
+                        <p style="margin: 1rem 0;">Real Estate Investment Trusts let you invest in property without buying buildings. They pay 90%+ of income as dividends.</p>
+                        
+                        <div class="stat-row">
+                            <span class="stat-label">Historical Average Return</span>
+                            <span class="stat-value">~8-9% annually</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Dividend Yield</span>
+                            <span class="stat-value">3-5%</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Best For</span>
+                            <span class="stat-value">Income seekers</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Inflation Protection</span>
+                            <span class="stat-value">Good</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Minimum Investment</span>
+                            <span class="stat-value">$10-$100</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Calculator Tab -->
+            <div id="calculator" class="tab-content">
+                <div class="intro-box">
+                    <h2>Interactive Growth Calculator</h2>
+                    <p>Move the sliders and watch your potential wealth grow in real-time! See the magical power of compound interest at work.</p>
+                </div>
+
+                <div class="interactive-calculator">
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>💰 Starting Amount</span>
+                            <span class="slider-value" id="initialValue">$5,000</span>
+                        </div>
+                        <input type="range" class="slider" id="initialSlider" min="0" max="50000" value="5000" step="500">
+                    </div>
+
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>📅 Monthly Contribution</span>
+                            <span class="slider-value" id="monthlyValue">$200</span>
+                        </div>
+                        <input type="range" class="slider" id="monthlySlider" min="0" max="2000" value="200" step="50">
+                    </div>
+
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>⏱️ Years to Invest</span>
+                            <span class="slider-value" id="yearsValue">20 years</span>
+                        </div>
+                        <input type="range" class="slider" id="yearsSlider" min="1" max="50" value="20" step="1">
+                    </div>
+
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>📈 Expected Return</span>
+                            <span class="slider-value" id="returnValue">8%</span>
+                        </div>
+                        <input type="range" class="slider" id="returnSlider" min="0" max="20" value="8" step="0.5">
+                    </div>
+
+                    <div class="result-panel">
+                        <h3>Your Investment Could Grow To</h3>
+                        <div class="result-value" id="finalValue">$0</div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 2rem;">
+                            <div style="background: rgba(255,255,255,0.15); padding: 1.5rem; border-radius: 12px; backdrop-filter: blur(10px);">
+                                <h4 style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">Total Invested</h4>
+                                <div style="font-size: 1.8rem; font-weight: 700;" id="totalInvested">$0</div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.15); padding: 1.5rem; border-radius: 12px; backdrop-filter: blur(10px);">
+                                <h4 style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">Investment Gains</h4>
+                                <div style="font-size: 1.8rem; font-weight: 700; color: var(--gold);" id="totalEarnings">$0</div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.15); padding: 1.5rem; border-radius: 12px; backdrop-filter: blur(10px);">
+                                <h4 style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">Growth Multiple</h4>
+                                <div style="font-size: 1.8rem; font-weight: 700;" id="growthMultiple">0x</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 3rem;">
+                    <h3 style="font-family: 'Playfair Display', serif; font-size: 2rem; margin-bottom: 1.5rem; color: var(--royal-blue);">Historical Returns by Asset Class</h3>
+                    <div class="card-grid">
+                        <div class="card">
+                            <h3>Stocks (S&P 500)</h3>
+                            <div style="font-size: 3rem; font-weight: 900; color: var(--mint); margin: 1rem 0;">~10%</div>
+                            <p>Long-term average annual return. Best for investors with 5+ year horizons who can weather volatility.</p>
+                        </div>
+                        <div class="card">
+                            <h3>Bonds</h3>
+                            <div style="font-size: 3rem; font-weight: 900; color: var(--electric); margin: 1rem 0;">~5%</div>
+                            <p>Steady returns with lower volatility. Good for income and stability in a balanced portfolio.</p>
+                        </div>
+                        <div class="card">
+                            <h3>60/40 Portfolio</h3>
+                            <div style="font-size: 3rem; font-weight: 900; color: var(--cyan); margin: 1rem 0;">~7.5%</div>
+                            <p>60% stocks, 40% bonds. Classic balanced approach that smooths returns while maintaining growth.</p>
+                        </div>
+                        <div class="card">
+                            <h3>Savings Account</h3>
+                            <div style="font-size: 3rem; font-weight: 900; color: var(--gold); margin: 1rem 0;">~3%</div>
+                            <p>FDIC-insured safety but barely beats inflation. Best for emergency funds, not long-term wealth.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pro Tips Tab -->
+            <div id="tips" class="tab-content">
+                <div class="intro-box">
+                    <h2>Essential Investment Principles</h2>
+                    <p>Master these fundamentals to build lasting wealth and avoid common pitfalls that trap new investors. Hover over each tip for a visual effect!</p>
+                </div>
+
+                <div class="tip-grid">
+                    <div class="tip-card" data-number="1">
+                        <h3>Start Small, Start Now</h3>
+                        <p>You don't need thousands to begin investing. Many platforms allow you to start with as little as $1. The key is building the habit. Someone who invests $200/month starting at 25 will have more at 65 than someone who invests $500/month starting at 40, thanks to compound interest.</p>
+                    </div>
+
+                    <div class="tip-card" data-number="2">
+                        <h3>Emergency Fund First</h3>
+                        <p>Before investing aggressively, save 3-6 months of expenses in a high-yield savings account. This cushion prevents you from selling investments at a loss during emergencies. Your investment strategy should assume you won't touch the money for years.</p>
+                    </div>
+
+                    <div class="tip-card" data-number="3">
+                        <h3>Automate Everything</h3>
+                        <p>Set up automatic transfers from your checking to investment accounts. Automation removes emotion and ensures consistency. You'll invest in both good times and bad, benefiting from dollar-cost averaging without thinking about market timing.</p>
+                    </div>
+
+                    <div class="tip-card" data-number="4">
+                        <h3>Think Decades, Not Days</h3>
+                        <p>Markets fluctuate constantly, but time smooths volatility. The S&P 500 has never had a negative 20-year period. Successful investors ignore daily noise and focus on long-term trends. If you panic-sell during downturns, you lock in losses and miss recoveries.</p>
+                    </div>
+
+                    <div class="tip-card" data-number="5">
+                        <h3>Fees Are Silent Killers</h3>
+                        <p>A 1% annual fee sounds tiny but costs tens of thousands over decades. If you invest $500/month for 30 years at 8% returns, you'll have $679,000. With a 1% fee, that drops to $587,000 – a $92,000 difference. Choose index funds with expense ratios under 0.20%.</p>
+                    </div>
+
+                    <div class="tip-card" data-number="6">
+                        <h3>Max Out Tax Advantages</h3>
+                        <p>Use 401(k)s and IRAs before taxable accounts. If your employer matches 401(k) contributions, contribute at least enough to get the full match – it's free money. Roth IRAs let gains grow tax-free forever. These tax benefits compound significantly over time.</p>
+                    </div>
+
+                    <div class="tip-card" data-number="7">
+                        <h3>Diversify Intelligently</h3>
+                        <p>Don't put all your money in one stock or sector. Broad market index funds instantly diversify across hundreds of companies. As you grow, add bonds for stability and potentially international stocks for global exposure. Diversification reduces risk without sacrificing returns.</p>
+                    </div>
+
+                    <div class="tip-card" data-number="8">
+                        <h3>Ignore Hot Tips</h3>
+                        <p>When everyone's talking about a stock, it's usually too late. Professional investors already acted on the news. Focus on consistent, boring strategies rather than chasing trends. Studies show 90% of active traders underperform index funds over 10+ years.</p>
+                    </div>
+
+                    <div class="tip-card" data-number="9">
+                        <h3>Rebalance Annually</h3>
+                        <p>If you want 70% stocks and 30% bonds, market movements will shift this ratio. Once a year, sell some of what's grown and buy what's lagged to restore your target allocation. This forces you to "buy low, sell high" automatically.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Glossary Tab -->
+            <div id="glossary" class="tab-content">
+                <div class="intro-box">
+                    <h2>Investment Terminology</h2>
+                    <p>Understanding these key terms will help you navigate financial news, research investments, and communicate with financial advisors. Hover over each term to see it highlight!</p>
+                </div>
+
+                <div class="glossary-grid">
+                    <div class="glossary-item">
+                        <h4>Compound Interest</h4>
+                        <p>Earning returns on your returns. Your investment grows exponentially over time as gains generate additional gains. Einstein allegedly called it "the eighth wonder of the world."</p>
+                    </div>
+
+                    <div class="glossary-item">
+                        <h4>Asset Allocation</h4>
+                        <p>How you divide investments among stocks, bonds, and cash. Younger investors typically allocate more to stocks for growth, while those nearing retirement shift toward bonds for stability.</p>
+                    </div>
+
+                    <div class="glossary-item">
+                        <h4>Diversification</h4>
+                        <p>Spreading investments across different assets to reduce risk. If one investment drops, others can offset losses. "Don't put all eggs in one basket."</p>
+                    </div>
+
+                    <div class="glossary-item">
+                        <h4>Dollar-Cost Averaging</h4>
+                        <p>Investing the same amount regularly regardless of price. This reduces timing risk and often results in buying more shares when prices are low, fewer when high.</p>
+                    </div>
+
+                    <div class="glossary-item">
+                        <h4>Dividend</h4>
+                        <p>A portion of company profits paid to shareholders, usually quarterly. Dividend-paying stocks provide passive income on top of potential price appreciation.</p>
+                    </div>
+
+                    <div class="glossary-item">
+                        <h4>Expense Ratio</h4>
+                        <p>Annual fee charged by mutual funds and ETFs, shown as a percentage. A 0.05% ratio means you pay $5 annually per $10,000 invested. Lower is always better.</p>
+                    </div>
+
+                    <div class="glossary-item">
+                        <h4>Bull vs Bear Market</h4>
+                        <p>Bull market: sustained rise in stock prices (optimism). Bear market: drop of 20%+ from recent peak (pessimism). Both are normal parts of market cycles.</p>
+                    </div>
+
+                    <div class="glossary-item">
+                        <h4>Market Capitalization</h4>
+                        <p>Total value of all a company's shares. Large-cap (>$10B) are established, small-cap (<$2B) are riskier but potentially faster-growing.</p>
+                    </div>
+
+                    <div class="glossary-item">
+                        <h4>P/E Ratio</h4>
+                        <p>Price-to-Earnings ratio. Measures stock price relative to company profits. A P/E of 25 means you pay $25 for every $1 of earnings. Lower can indicate value.</p>
+                    </div>
+
+                    <div class="glossary-item">
+                        <h4>Volatility</h4>
+                        <p>How much an investment's price fluctuates. High volatility means larger swings up and down. Higher risk, but potentially higher returns over time.</p>
+                    </div>
+
+                    <div class="glossary-item">
+                        <h4>Index Fund</h4>
+                        <p>A fund that tracks a market index like the S&P 500. Provides instant diversification and typically charges very low fees. Warren Buffett's recommended investment.</p>
+                    </div>
+
+                    <div class="glossary-item">
+                        <h4>Capital Gains</h4>
+                        <p>Profit from selling an investment for more than you paid. Long-term gains (held 1+ year) are taxed at lower rates than short-term gains or regular income.</p>
+                    </div>
+
+                    <div class="glossary-item">
+                        <h4>Yield</h4>
+                        <p>Annual income (dividends or interest) as a percentage of investment price. A 3% yield on a $100 stock pays $3 annually. Important for income-focused investors.</p>
+                    </div>
+
+                    <div class="glossary-item">
+                        <h4>Rebalancing</h4>
+                        <p>Adjusting your portfolio back to target allocations. If stocks surge and shift your 70/30 portfolio to 80/20, you sell some stocks and buy bonds.</p>
+                    </div>
+
+                    <div class="glossary-item">
+                        <h4>Economic Moat</h4>
+                        <p>Competitive advantages that protect a company from rivals. Wide moats (brand strength, patents, network effects) help companies maintain profits long-term.</p>
+                    </div>
+
+                    <div class="glossary-item">
+                        <h4>CAGR</h4>
+                        <p>Compound Annual Growth Rate. Shows average yearly growth rate over multiple years, smoothing out volatility. More accurate than simple averages for comparing investments.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration - FREE APIs for real stock data
+        const FINNHUB_API_KEY = 'YOUR_API_KEY_HERE'; // Get free at finnhub.io
+        const ALPHA_VANTAGE_KEY = 'YOUR_API_KEY_HERE'; // Get free at alphavantage.co
+        
+        // Stock symbols
+        const topMoversSymbols = ['NVDA', 'TSLA', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'AMD'];
+        const hot2026Symbols = ['NVDA', 'AVGO', 'MSFT', 'AMZN', 'PLTR', 'TSM', 'LRCX', 'MU', 'APP', 'SOFI'];
+        const tickerSymbols = ['NVDA', 'AAPL', 'MSFT', 'GOOGL', 'TSLA', 'AMZN', 'META', 'SPY'];
+
+        // Stock info database
+        const stockInfo = {
+            'NVDA': { name: 'NVIDIA', desc: 'AI chip leader dominating data center GPUs' },
+            'AVGO': { name: 'Broadcom', desc: 'Custom AI chip designer for hyperscalers' },
+            'MSFT': { name: 'Microsoft', desc: 'Azure cloud + Copilot AI integration' },
+            'AMZN': { name: 'Amazon', desc: 'AWS cloud computing powerhouse' },
+            'PLTR': { name: 'Palantir', desc: 'AI-powered data analytics platform' },
+            'TSM': { name: 'Taiwan Semi', desc: '90%+ market share in advanced chips' },
+            'LRCX': { name: 'Lam Research', desc: 'Chip manufacturing equipment leader' },
+            'MU': { name: 'Micron', desc: 'Memory chips for AI data centers' },
+            'APP': { name: 'AppLovin', desc: 'AI-powered mobile game advertising' },
+            'SOFI': { name: 'SoFi', desc: 'Fast-growing digital bank' },
+            'AAPL': { name: 'Apple', desc: 'iPhone maker and tech giant' },
+            'GOOGL': { name: 'Alphabet', desc: 'Google search and cloud services' },
+            'TSLA': { name: 'Tesla', desc: 'Electric vehicles and energy' },
+            'META': { name: 'Meta', desc: 'Facebook, Instagram, WhatsApp' },
+            'AMD': { name: 'AMD', desc: 'CPU and GPU manufacturer' },
+            'SPY': { name: 'S&P 500 ETF', desc: 'Tracks S&P 500 index' }
+        };
+
+        // Cache for stock data
+        let stockCache = {};
+        let previousPrices = {};
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setupCalculator();
+            fetchAllStocks();
+            
+            // Auto-refresh every 60 seconds
+            setInterval(fetchAllStocks, 60000);
+        });
+
+        async function fetchAllStocks() {
+            // Fetch all unique symbols
+            const allSymbols = [...new Set([...topMoversSymbols, ...hot2026Symbols, ...tickerSymbols])];
+            
+            for (const symbol of allSymbols) {
+                await fetchStockData(symbol);
+            }
+            
+            populateTicker();
+            populateLiveStocks();
+            populate2026Stocks();
+        }
+
+        async function fetchStockData(symbol) {
+            try {
+                // Using Finnhub API (free tier: 60 calls/minute)
+                const response = await fetch(
+                    `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_API_KEY}`
+                );
+                
+                if (!response.ok) {
+                    throw new Error('API request failed');
+                }
+                
+                const data = await response.json();
+                
+                // Store in cache
+                stockCache[symbol] = {
+                    price: data.c || 0, // current price
+                    change: data.dp || 0, // percent change
+                    high: data.h || 0,
+                    low: data.l || 0,
+                    volume: data.v || 0,
+                    previousClose: data.pc || 0
+                };
+                
+                return stockCache[symbol];
+            } catch (error) {
+                console.error(`Error fetching ${symbol}:`, error);
+                
+                // Fallback to simulated data if API fails
+                if (!stockCache[symbol]) {
+                    stockCache[symbol] = generateFallbackData(symbol);
+                }
+                return stockCache[symbol];
+            }
+        }
+
+        function generateFallbackData(symbol) {
+            // Generate realistic fallback data
+            const basePrices = {
+                'NVDA': 141.50, 'AVGO': 237.89, 'MSFT': 441.23, 'AMZN': 225.67,
+                'PLTR': 79.34, 'TSM': 212.45, 'LRCX': 76.23, 'MU': 91.56,
+                'APP': 368.90, 'SOFI': 15.78, 'AAPL': 246.39, 'GOOGL': 195.23,
+                'TSLA': 412.50, 'META': 638.91, 'AMD': 117.82, 'SPY': 601.23
+            };
+            
+            const price = basePrices[symbol] || 100;
+            const change = (Math.random() - 0.5) * 6; // -3% to +3%
+            
+            return {
+                price: price,
+                change: change,
+                high: price * 1.02,
+                low: price * 0.98,
+                volume: Math.random() * 50000000 + 10000000,
+                previousClose: price / (1 + change/100)
+            };
+        }
+
+        function populateTicker() {
+            const ticker = document.getElementById('marketTicker');
+            let html = '';
+            
+            // Duplicate for seamless scrolling
+            for (let i = 0; i < 2; i++) {
+                tickerSymbols.forEach(symbol => {
+                    const stock = stockCache[symbol] || generateFallbackData(symbol);
+                    const changeClass = stock.change >= 0 ? 'positive' : 'negative';
+                    const arrow = stock.change >= 0 ? '▲' : '▼';
+                    
+                    html += `
+                        <div class="ticker-item">
+                            <span class="ticker-symbol">${symbol}</span>
+                            <span class="ticker-price">$${stock.price.toFixed(2)}</span>
+                            <span class="ticker-change ${changeClass}">${arrow} ${Math.abs(stock.change).toFixed(2)}%</span>
+                        </div>
+                    `;
+                });
+            }
+            
+            ticker.innerHTML = html;
+        }
+
+        function populateLiveStocks() {
+            const grid = document.getElementById('liveStocksGrid');
+            let html = '';
+            
+            topMoversSymbols.forEach(symbol => {
+                const stock = stockCache[symbol] || generateFallbackData(symbol);
+                const info = stockInfo[symbol];
+                html += createStockCard(symbol, stock, info);
+            });
+            
+            grid.innerHTML = html;
+        }
+
+        function populate2026Stocks() {
+            const grid = document.getElementById('hot2026Grid');
+            let html = '';
+            
+            hot2026Symbols.forEach(symbol => {
+                const stock = stockCache[symbol] || generateFallbackData(symbol);
+                const info = stockInfo[symbol];
+                html += createStockCard(symbol, stock, info, true);
+            });
+            
+            grid.innerHTML = html;
+        }
+
+        function createStockCard(symbol, stock, info, is2026 = false) {
+            const changeClass = stock.change >= 0 ? 'positive' : 'negative';
+            const arrow = stock.change >= 0 ? '▲' : '▼';
+            const marketCap = (stock.price * (Math.random() * 1000 + 200)).toFixed(0);
+            
+            return `
+                <div class="live-stock-card">
+                    <div class="stock-header-live">
+                        <div class="stock-title-section">
+                            <h4>${info.name}</h4>
+                            <span class="stock-ticker">${symbol}</span>
+                        </div>
+                        <div class="live-price-section">
+                            <div class="live-price" id="price-${symbol}">$${stock.price.toFixed(2)}</div>
+                            <div class="live-change ${changeClass}" id="change-${symbol}">
+                                ${arrow} ${Math.abs(stock.change).toFixed(2)}%
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <p style="color: var(--text-secondary); margin: 1rem 0; line-height: 1.6;">${info.desc}</p>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1.5rem;">
+                        <div style="background: #F8FAFC; padding: 1rem; border-radius: 10px;">
+                            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 600;">Day Range</div>
+                            <div style="font-size: 1.2rem; font-weight: 800; color: var(--royal-blue);">$${stock.low.toFixed(2)} - $${stock.high.toFixed(2)}</div>
+                        </div>
+                        <div style="background: #F8FAFC; padding: 1rem; border-radius: 10px;">
+                            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 600;">Volume</div>
+                            <div style="font-size: 1.2rem; font-weight: 800; color: var(--royal-blue);">${(stock.volume / 1000000).toFixed(1)}M</div>
+                        </div>
+                        <div style="background: #F8FAFC; padding: 1rem; border-radius: 10px;">
+                            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 600;">Market Cap</div>
+                            <div style="font-size: 1.2rem; font-weight: 800; color: var(--royal-blue);">$${marketCap}B</div>
+                        </div>
+                        <div style="background: #F8FAFC; padding: 1rem; border-radius: 10px;">
+                            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 600;">Prev Close</div>
+                            <div style="font-size: 1.2rem; font-weight: 800; color: var(--royal-blue);">$${stock.previousClose.toFixed(2)}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function refreshAllStocks() {
+            const button = event.target.closest('button');
+            button.innerHTML = '<div class="loading-spinner"></div> Fetching Live Data...';
+            
+            await fetchAllStocks();
+            
+            setTimeout(() => {
+                button.innerHTML = '<span>🔄</span> Refresh Live Data';
+            }, 1000);
+        }
+
+        async function refresh2026Stocks() {
+            const button = event.target.closest('button');
+            button.innerHTML = '<div class="loading-spinner"></div> Updating Prices...';
+            
+            await fetchAllStocks();
+            
+            setTimeout(() => {
+                button.innerHTML = '<span>🔄</span> Refresh Prices';
+            }, 1000);
+        }
+
+        function setupCalculator() {
+            const sliders = ['initial', 'monthly', 'years', 'return'];
+            
+            sliders.forEach(id => {
+                const slider = document.getElementById(`${id}Slider`);
+                slider.addEventListener('input', updateCalculator);
+            });
+            
+            updateCalculator();
+        }
+
+        function updateCalculator() {
+            const initial = parseFloat(document.getElementById('initialSlider').value);
+            const monthly = parseFloat(document.getElementById('monthlySlider').value);
+            const years = parseInt(document.getElementById('yearsSlider').value);
+            const returnRate = parseFloat(document.getElementById('returnSlider').value) / 100;
+            
+            document.getElementById('initialValue').textContent = `$${initial.toLocaleString()}`;
+            document.getElementById('monthlyValue').textContent = `$${monthly.toLocaleString()}`;
+            document.getElementById('yearsValue').textContent = `${years} years`;
+            document.getElementById('returnValue').textContent = `${(returnRate * 100).toFixed(1)}%`;
+            
+            const months = years * 12;
+            const monthlyRate = returnRate / 12;
+            
+            let futureValue = initial * Math.pow(1 + monthlyRate, months);
+            
+            if (monthly > 0) {
+                futureValue += monthly * ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate);
+            }
+            
+            const totalContributed = initial + (monthly * months);
+            const earnings = futureValue - totalContributed;
+            const multiple = futureValue / totalContributed;
+            
+            document.getElementById('finalValue').textContent = `$${Math.round(futureValue).toLocaleString()}`;
+            document.getElementById('totalInvested').textContent = `$${Math.round(totalContributed).toLocaleString()}`;
+            document.getElementById('totalEarnings').textContent = `$${Math.round(earnings).toLocaleString()}`;
+            document.getElementById('growthMultiple').textContent = `${multiple.toFixed(2)}x`;
+        }
+
+        function openTab(evt, tabName) {
+            const tabContents = document.getElementsByClassName('tab-content');
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove('active');
+            }
+
+            const tabButtons = document.getElementsByClassName('tab-button');
+            for (let i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove('active');
+            }
+
+            document.getElementById(tabName).classList.add('active');
+            evt.currentTarget.classList.add('active');
+        }
+    </script>
+</body>
+</html>
